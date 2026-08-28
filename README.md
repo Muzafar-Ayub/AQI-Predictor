@@ -4,7 +4,7 @@ Automated **pollutant forecasting + AQI calculation** for Karachi, Pakistan. The
 
 > **Detailed project report:** The full internship submission (architecture diagrams, EDA figures, model evaluation, automation, challenges) is at the repository root: **[final_report.pdf](final_report.pdf)**
 
-**Detailed report:** [final_report.pdf](final_report.pdf)   
+**Detailed report:** final_report.pdf   
 **EDA notebook:** [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
 
 ---
