@@ -1,0 +1,59 @@
+name: Feature Pipeline (Every 2 Hours)
+
+# Incremental ingestion every 2 hours with optional catch-up (default 48 h gap fill):
+# OpenWeather fetch → raw_data upsert → single-row feature engineering → features upsert.
+# Full historical features require a one-time backfill.py run beforehand.
+
+# Timed runs: use external cron → GitHub API workflow_dispatch (see docs/EXTERNAL_CRON_SETUP.md).
+# GitHub's built-in `schedule` is disabled here to avoid late/duplicate runs.
+
+on:
+  workflow_dispatch:
+  # schedule:  # disabled — external cron triggers on time (cron-job.org)
+  #   - cron: "0 */2 * * *"
+
+concurrency:
+  group: feature-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  hourly-feature-pipeline:
+    name: "Fetch → Store Raw → Engineer Features → Store"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      PYTHONUNBUFFERED: "1"
+      OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          missing=0
+          if [ -z "$OPENWEATHER_API_KEY" ]; then echo "::error::OPENWEATHER_API_KEY secret is not set"; missing=1; fi
+          if [ -z "$MONGODB_URI" ]; then echo "::error::MONGODB_URI secret is not set"; missing=1; fi
+          exit $missing
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements-ci.txt
+
+      - name: Install pipeline dependencies
+        run: pip install -r requirements-ci.txt
+
+      - name: Run incremental hourly pipeline
+        run: python src/hourly_pipeline.py --catchup-hours 48
+
+      - name: Log completion
+        run: echo "Hourly pipeline complete at $(date -u)"
