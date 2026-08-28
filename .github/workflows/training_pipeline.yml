@@ -1,0 +1,71 @@
+name: Training Pipeline (Daily)
+
+# Timed runs: external cron daily 02:00 UTC / 07:00 PKT (docs/EXTERNAL_CRON_SETUP.md).
+# Daily train.py: 12 pollutant targets × four algorithms, best model per target
+# saved locally, uploaded to Hugging Face Hub, metadata mirrored in MongoDB.
+
+on:
+  workflow_dispatch:
+  # schedule:  # disabled — external cron triggers on time (cron-job.org)
+  #   - cron: "0 2 * * *"   # daily 02:00 UTC = 07:00 PKT
+
+concurrency:
+  group: training-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  train:
+    name: "Train → HF Hub Upload → MongoDB Metadata"
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      PYTHONUNBUFFERED: "1"
+      OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_REPO_ID: ${{ secrets.HF_REPO_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          missing=0
+          if [ -z "$OPENWEATHER_API_KEY" ]; then echo "::error::OPENWEATHER_API_KEY secret is not set"; missing=1; fi
+          if [ -z "$MONGODB_URI" ]; then echo "::error::MONGODB_URI secret is not set"; missing=1; fi
+          if [ -z "$HF_TOKEN" ]; then echo "::error::HF_TOKEN secret is not set (required for model registry upload)"; missing=1; fi
+          if [ -z "$HF_REPO_ID" ]; then echo "::error::HF_REPO_ID secret is not set (required for model registry upload)"; missing=1; fi
+          exit $missing
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements-ci.txt
+
+      - name: Install pipeline dependencies
+        run: pip install -r requirements-ci.txt
+
+      - name: Run training pipeline
+        run: python src/train.py
+
+      - name: Upload trained model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-models-${{ github.run_id }}
+          path: models/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Log completion
+        run: |
+          echo "Training pipeline completed at $(date -u)"
+          echo "Models uploaded to HF Hub repo: ${HF_REPO_ID:-not configured}"
