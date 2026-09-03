@@ -8,13 +8,27 @@
 
 <br/>
 
-<!-- Animated "10 PEARLS INTERNSHIP" marquee-style badge -->
 <a href="#-internship">
   <img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=800&size=30&duration=1800&pause=500&color=FFD700&center=true&vCenter=true&repeat=true&width=600&height=60&lines=%F0%9F%8F%86+10+PEARLS+INTERNSHIP+%F0%9F%8F%86;%F0%9F%8F%86+10+PEARLS+INTERNSHIP+%F0%9F%8F%86" alt="10 Pearls Internship" />
 </a>
 
 <br/><br/>
 
+## 🚀 Live Dashboard
+
+<div align="center">
+
+<a href="https://aqi-predictor-yiaycskjogyq7zquxmsldp.streamlit.app/">
+  <img src="https://img.shields.io/badge/🚀_OPEN_LIVE_AQI_DASHBOARD-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Open Live AQI Dashboard"/>
+</a>
+
+<br/><br/>
+
+<b>🌆 Karachi AQI Predictor — Live 3-Day Forecast</b>
+
+</div>
+
+<br/>
 
 ## 📖 Detailed Reports
 
@@ -34,7 +48,7 @@ Karachi faces recurring air-quality stress from traffic, industry, construction 
 3. 🏁 Reports **final AQI = max(sub-indices)** with the **dominant pollutant**
 
 | Horizon | Output                                       |
-| ------- | --------------------------------------------- |
+| ------- | -------------------------------------------- |
 | +24 h   | Predicted pollutant concentrations → EPA AQI |
 | +48 h   | Predicted pollutant concentrations → EPA AQI |
 | +72 h   | Predicted pollutant concentrations → EPA AQI |
@@ -47,7 +61,7 @@ Karachi faces recurring air-quality stress from traffic, industry, construction 
 
 Serverless end-to-end pipeline: **OpenWeather + Open-Meteo → MongoDB Atlas → GitHub Actions → Hugging Face Hub → Streamlit**.
 
-```
+```text
 OpenWeather API (+ Open-Meteo for historical weather)
         │
         ▼
@@ -81,11 +95,11 @@ Streamlit Dashboard
 ```
 
 | Layer          | Technology                                        |
-| -------------- | -------------------------------------------------- |
+| -------------- | ------------------------------------------------- |
 | Language       | Python 3.11                                       |
 | Data sources   | OpenWeather Air Pollution API; Open-Meteo archive |
 | Feature store  | MongoDB Atlas                                     |
-| ML             | scikit-learn (Ridge, RF, GB), XGBoost              |
+| ML             | scikit-learn (Ridge, RF, GB), XGBoost             |
 | Model registry | Hugging Face Hub + MongoDB metadata               |
 | Explainability | SHAP                                              |
 | Dashboard      | Streamlit, Plotly                                 |
@@ -97,7 +111,7 @@ Streamlit Dashboard
 ## 📊 Dataset
 
 | Metric                | Value                          |
-| ---------------------- | ------------------------------- |
+| --------------------- | ------------------------------ |
 | Raw MongoDB records   | 2,091                          |
 | Feature rows          | 2,089                          |
 | Training-ready rows   | 1,971                          |
@@ -105,20 +119,20 @@ Streamlit Dashboard
 | Frequency             | Hourly                         |
 | Historical window     | ~90 days                       |
 | Prediction targets    | 12                             |
-| Forecast horizons     | 24 h, 48 h, 72 h                |
+| Forecast horizons     | 24 h, 48 h, 72 h               |
 | Pollutants forecasted | PM2.5, PM10, O₃, NO₂           |
 
 Training-ready rows contain supervised target values generated during batch feature engineering. During training, each model uses rows where its specific target is available.
 
-- **Bootstrap:** `backfill.py` loads ~90 days of OpenWeather pollution history + Open-Meteo weather, upserts `raw_data`, then batch-engineers `features` with all 12 target columns.
-- **Live updates:** The feature pipeline runs every 2 hours (cron-job.org → GitHub Actions). Each run optionally catches up missing hours (≤48 h), fetches the current snapshot, and upserts one incremental feature row.
-- **Raw fields:** PM2.5, PM10, O₃, NO₂, CO, SO₂, NH₃, OpenWeather `aqi_category` (1–5), plus temperature, humidity, pressure, wind speed, cloud cover.
+* **Bootstrap:** `backfill.py` loads ~90 days of OpenWeather pollution history + Open-Meteo weather, upserts `raw_data`, then batch-engineers `features` with all 12 target columns.
+* **Live updates:** The feature pipeline runs every 2 hours (cron-job.org → GitHub Actions). Each run optionally catches up missing hours (≤48 h), fetches the current snapshot, and upserts one incremental feature row.
+* **Raw fields:** PM2.5, PM10, O₃, NO₂, CO, SO₂, NH₃, OpenWeather `aqi_category` (1–5), plus temperature, humidity, pressure, wind speed, cloud cover.
 
 <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%" height="4px">
 
 ## 🧮 AQI Calculation
 
-```
+```text
 ML prediction (per pollutant, per horizon)
    PM2.5, PM10, O3, NO2  @ +24h / +48h / +72h
               │
@@ -132,7 +146,7 @@ ML prediction (per pollutant, per horizon)
 
 Breakpoint formula for concentration `C` in range `[C_low, C_high]` → AQI `[I_low, I_high]`:
 
-```
+```text
 AQI = ((I_high - I_low) / (C_high - C_low)) × (C - C_low) + I_low
 ```
 
@@ -145,7 +159,7 @@ AQI = ((I_high - I_low) / (C_high - C_low)) × (C - C_low) + I_low
 Two modes in `src/feature_engineering.py`:
 
 | Mode            | Used by              | Targets                                 |
-| ---------------- | --------------------- | ----------------------------------------- |
+| --------------- | -------------------- | --------------------------------------- |
 | **Batch**       | `backfill.py`        | 12 supervised target columns included   |
 | **Incremental** | `hourly_pipeline.py` | Targets omitted (future values unknown) |
 
@@ -154,7 +168,7 @@ Two modes in `src/feature_engineering.py`:
 **Per pollutant (PM2.5, PM10, O₃, NO₂):**
 
 | Type          | Features                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------- |
+| ------------- | ----------------------------------------------------------------------------------------------- |
 | Lags          | `{pollutant}_lag_1`, `_lag_24`, `_lag_48`                                                       |
 | Rolling means | `{pollutant}_rolling_6_mean`, `_rolling_12_mean`, `_rolling_24_mean` (shifted to avoid leakage) |
 | Momentum      | `{pollutant}_change_rate = (current − lag_24) / lag_24`                                         |
@@ -168,7 +182,7 @@ Two modes in `src/feature_engineering.py`:
 Full analysis with all plots: [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
 
 | Insight                     | Implication                                          |
-| ----------------------------- | ------------------------------------------------------ |
+| --------------------------- | ---------------------------------------------------- |
 | PM pollutants dominate AQI  | Prioritise PM2.5 / PM10 in modelling                 |
 | Strong temporal persistence | Lag + rolling features essential                     |
 | Diurnal morning peaks       | `hour` feature validated                             |
@@ -182,13 +196,13 @@ Full analysis with all plots: [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
 **12 pollutant forecasting models** = 4 pollutants × 3 horizons.
 
 | Pollutant            | Horizons            |
-| ---------------------- | --------------------- |
+| -------------------- | ------------------- |
 | PM2.5, PM10, O₃, NO₂ | +24 h, +48 h, +72 h |
 
 **Algorithms evaluated per target (48 experiments total):**
 
 | Algorithm                           | Notes                                |
-| -------------------------------------- | --------------------------------------- |
+| ----------------------------------- | ------------------------------------ |
 | Ridge Regression (+ StandardScaler) | Linear baseline with correlated lags |
 | Random Forest                       | Shallow ensemble, subsampling        |
 | Gradient Boosting                   | Regularised boosting                 |
@@ -197,7 +211,7 @@ Full analysis with all plots: [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
 Since the dataset contains ~2,000 hourly samples, **classical ML** was chosen over deep learning — tree-based and regularized linear models suit small-to-medium tabular data; deep learning typically needs much larger datasets.
 
 | Setting          | Value                                                               |
-| ------------------ | ---------------------------------------------------------------------- |
+| ---------------- | ------------------------------------------------------------------- |
 | Train/test split | Time-ordered **80 / 20** (no shuffle)                               |
 | Label filter     | Per-target `.dropna()`                                              |
 | Overfitting rule | Flag when **both** test/train RMSE ratio > 1.5 **and** R² gap > 0.4 |
@@ -212,7 +226,7 @@ Winning models are saved locally, uploaded to Hugging Face, and registered in Mo
 Active models from the latest training run (`model_registry`):
 
 | Target             | Best Model        | Test RMSE | Test MAE | Test R² |
-| --------------------- | -------------------- | ----------- | ---------- | --------- |
+| ------------------ | ----------------- | --------- | -------- | ------- |
 | `target_pm2_5_24h` | Random Forest     | 5.3007    | 4.2833   | −0.4967 |
 | `target_pm2_5_48h` | Random Forest     | 5.5129    | 3.9727   | −0.1322 |
 | `target_pm2_5_72h` | Gradient Boosting | 4.8749    | 3.6338   | 0.3961  |
@@ -234,7 +248,7 @@ Active models from the latest training run (`model_registry`):
 
 ## 🗂️ Model Registry
 
-```
+```text
 train.py → save_model()
   ├── joblib → models/ (local cache)
   ├── upload → Hugging Face Hub (model.pkl + metadata.json)
@@ -250,26 +264,50 @@ MongoDB stores `target`, `model_name`, `metrics`, `feature_columns`, `hf_repo_id
 GitHub Actions run all pipelines. **cron-job.org** triggers `workflow_dispatch` on schedule to avoid GitHub `schedule` delays on free-tier runners.
 
 | Workflow              | Schedule                    | Purpose                               |
-| ------------------------ | ------------------------------ | ---------------------------------------- |
+| --------------------- | --------------------------- | ------------------------------------- |
 | **Feature pipeline**  | Hourly (`0 * * * *` UTC)    | Catch-up, fetch, incremental features |
 | **Training pipeline** | Daily 02:00 UTC (07:00 PKT) | Retrain 12 targets, HF upload         |
 
-- **Feature pipeline:** validate secrets → optional catch-up (≤48 h) → fetch current OpenWeather → incremental feature upsert.
-- **Training pipeline:** validate secrets → `train.py` (48 fits → 12 winners) → HF upload + MongoDB registry + 30-day Actions artefact backup.
+* **Feature pipeline:** validate secrets → optional catch-up (≤48 h) → fetch current OpenWeather → incremental feature upsert.
+* **Training pipeline:** validate secrets → `train.py` (48 fits → 12 winners) → HF upload + MongoDB registry + 30-day Actions artefact backup.
 
 <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%" height="4px">
 
-## 🖥️ Dashboard — Example Output
+## 🖥️ Dashboard — Live Application
+
+<div align="center">
+
+<a href="https://aqi-predictor-yiaycskjogyq7zquxmsldp.streamlit.app/">
+  <img src="https://img.shields.io/badge/🚀_OPEN_LIVE_DASHBOARD-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Open Live Dashboard"/>
+</a>
+
+</div>
+
+### Dashboard Features
+
+* 🌫️ Current AQI
+* 🔮 +24 h forecast
+* 🔮 +48 h forecast
+* 🔮 +72 h forecast
+* 🧪 Predicted pollutant concentrations
+* 📈 AQI forecast timeline
+* 📊 Sub-AQI comparison
+* 📉 Historical AQI trends
+* 🌡️ Pollutant concentration trends
+* 🧠 SHAP feature importance
+* ⚠️ Hazardous / Very Unhealthy / Unhealthy alerts
+
+### Example Output
 
 | Output              | Value        |
-| ---------------------- | -------------- |
+| ------------------- | ------------ |
 | Current AQI         | 91           |
 | 24 h forecast       | AQI 92       |
 | 48 h forecast       | AQI 81       |
 | 72 h forecast       | AQI 83       |
 | Dominant pollutants | PM2.5 / PM10 |
 
-**Sections:** current AQI, +24/+48/+72 h cards, pollutant breakdown, forecast timeline, historical trends, alert banners, SHAP importances for +24 h PM2.5.
+> **Note:** Example values above represent a sample dashboard output. The live dashboard displays the latest available predictions from the deployed pipeline.
 
 <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%" height="4px">
 
@@ -281,7 +319,7 @@ The dashboard computes SHAP values for the active `target_pm2_5_24h` model using
 
 ## 📁 Project Structure
 
-```
+```text
 ├── .github/workflows/       # CI, feature (hourly), training (daily)
 ├── app/streamlit_app.py     # Dashboard
 ├── notebooks/01_eda.ipynb   # Full EDA
@@ -323,20 +361,20 @@ python src/train.py             # train 12 models locally
 streamlit run app/streamlit_app.py
 ```
 
-- `scripts/verify_latest_feature.py` compares MongoDB state against `predict.py` output.
-- `backfill.py --rebuild-features` regenerates features after schema changes.
+* `scripts/verify_latest_feature.py` compares MongoDB state against `predict.py` output.
+* `backfill.py --rebuild-features` regenerates features after schema changes.
 
 <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%" height="4px">
 
 ## 🔐 Configuration
 
 | Variable              | Purpose                                  | Required in CI     |
-| ------------------------ | ------------------------------------------- | --------------------- |
+| --------------------- | ---------------------------------------- | ------------------ |
 | `OPENWEATHER_API_KEY` | OpenWeather API                          | Feature + training |
 | `MONGODB_URI`         | MongoDB Atlas                            | Feature + training |
-| `DB_NAME`             | Database name (default: `aqi_predictor`) | Optional            |
-| `HF_TOKEN`            | Hugging Face write token                 | Training            |
-| `HF_REPO_ID`          | Hugging Face model repo                  | Training            |
+| `DB_NAME`             | Database name (default: `aqi_predictor`) | Optional           |
+| `HF_TOKEN`            | Hugging Face write token                 | Training           |
+| `HF_REPO_ID`          | Hugging Face model repo                  | Training           |
 
 Local: `.env` (see `.env.example`). GitHub: **Settings → Secrets and variables → Actions**. Streamlit Cloud: same keys in app secrets (TOML).
 
@@ -344,15 +382,42 @@ Local: `.env` (see `.env.example`). GitHub: **Settings → Secrets and variables
 
 ## ☁️ Deployment
 
-- **Streamlit Community Cloud**: main file `app/streamlit_app.py`, secrets as above
-- **Container platforms**: Python 3.11, `requirements.txt`, port 8501, `streamlit run app/streamlit_app.py --server.address=0.0.0.0`
+### Streamlit Community Cloud
+
+Main file:
+
+```text
+app/streamlit_app.py
+```
+
+Required secrets:
+
+```text
+OPENWEATHER_API_KEY
+MONGODB_URI
+DB_NAME
+HF_TOKEN
+HF_REPO_ID
+```
+
+The application is deployed and available here:
+
+**[🚀 Open Live AQI Predictor Dashboard](https://aqi-predictor-yiaycskjogyq7zquxmsldp.streamlit.app/)**
+
+### Container Platforms
+
+Python 3.11, `requirements.txt`, port 8501:
+
+```bash
+streamlit run app/streamlit_app.py --server.address=0.0.0.0
+```
 
 <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%" height="4px">
 
 ## 🧩 Challenges Addressed
 
 | Problem                                | Solution                                                         |
-| ----------------------------------------- | -------------------------------------------------------------------- |
+| -------------------------------------- | ---------------------------------------------------------------- |
 | OpenWeather 1–5 category only          | Pollutant forecasting + EPA AQI calculation                      |
 | Missed hourly runs                     | Catch-up pipeline (≤48 h)                                        |
 | Incremental rows lack targets          | Batch backfill builds targets; hourly path omits unknown futures |
@@ -377,7 +442,19 @@ See [final_report.pdf](final_report.pdf) for the full challenges list and detail
 
 </div>
 
-This project was developed as part of the **10 Pearls Internship Program**, covering end-to-end applied ML: data ingestion, feature engineering, model training/selection, MLOps automation, and dashboard delivery. Full write-up in **[final_report.pdf](final_report.pdf)**.
+This project was developed as part of the **10 Pearls Internship Program**, covering end-to-end applied ML: data ingestion, feature engineering, model training/selection, MLOps automation, and dashboard delivery.
+
+### 📄 Full Project Report
+
+**[View the Final Internship Report](final_report.pdf)**
+
+### 📓 EDA Notebook
+
+**[View the EDA Notebook](notebooks/01_eda.ipynb)**
+
+### 🌐 Live Application
+
+**[🚀 Open Karachi AQI Predictor](https://aqi-predictor-yiaycskjogyq7zquxmsldp.streamlit.app/)**
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00c6ff,50:2c5364,100:0f2027&height=150&section=footer&text=Thanks%20for%20visiting!&fontSize=22&fontColor=ffffff&animation=fadeIn" width="100%"/>
 
